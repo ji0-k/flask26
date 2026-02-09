@@ -36,8 +36,7 @@ def login():
     try : # 예외 발생 가능성 있음
         with conn.cursor() as cursor: # DB에 커서객체 사용
         # 1.회원 정보 조회
-            sql = "SELECT id,name,uid, role \
-            FROM members WHERE uid = %s AND password = %s "
+            sql = "SELECT id,name,uid, role FROM members WHERE uid = %s AND password = %s "
         #                  uid가 동일 & pw가 동일
         #   id, name, uid, role 가져온다.
             cursor.execute(sql, (uid, upw))  # 쿼리문 실행
@@ -103,40 +102,47 @@ def join(): #http://localhost:5000/ get(화면출력, 회원가입용 창) post(
 # post 값입력 받아서
 # 개체로 보내는거
 # 브라우저의 session코드 , 시크릿 코드 넣어주기
-@app.route('/member/edit', methods=['GET','POST'])
-def member_edit() :
-    if 'user_id' not in session: # 세션에 있는 내용이 비었으면(로그인안된상태이면)
-        return redirect(url_for('login'))  #로그인 경로로 보내기
+@app.route('/member/edit', methods=['GET', 'POST'])
+def member_edit():
+    if 'user_id' not in session:  # 세션에 있는 내용이 비었으면(로그인안된상태이면)
+        return redirect(url_for('login'))  # 로그인 경로로 보내기
+
+    print(f"{session['user_id']} login_session")
 
     # 세션 내용이 있으면 DB연결 시작
     conn = Session.get_connection()
-    try :
+    try:
         with conn.cursor() as cursor:
-            if request.method == 'GET' :
-                #기존정보 불러오기
-                cursor.execute("SELECT * FROM members WHERE id = %s", (session['user_id'],)) #회원 고유번호
-                user_info = cursor.fetchone() #DB에서 가져온 dict
-                return render_template('member_edit.html', user =user_info)
-                # 가장 중요한 포인트                        get요청시 페이지 , 객체전달용 코드
+            if request.method == 'GET':
+                #print("get method call")
+                # 기존정보 불러오기
+                cursor.execute("SELECT * FROM members WHERE id = %s ", (session['user_id'],))
+                #print("sql call")
+                user_info = cursor.fetchone()  # DB에서 가져온 dict
+                #print(f"user_info call {user_info}")
+                return render_template('member_edit.html', user=user_info)
+                #                         가장 중요한 포인트 get요청시 페이지 , 객체전달용 코드
+                # POST 요청: 정보 업데이트
             new_name = request.form.get('name')
             new_pw = request.form.get('password')
 
-            if new_pw : # 비밀번호입력시에만 변경
-                sql = "UPDATE members SET name = %s, password = %s WHERE uid = %s "
-                cursor.execute(sql, (new_pw, session['user_id'],))
-            else : # 이름만 변경
+            if new_pw:  # 비밀번호 입력 시에만 변경
+                sql = "UPDATE members SET name = %s, password = %s WHERE id = %s"
+                cursor.execute(sql, (new_name, new_pw, session['user_id']))
+            else:  # 이름만 변경
                 sql = "UPDATE members SET name = %s WHERE id = %s"
-                cursor.execute(sql, (new_name, session['user_id'],))
+                cursor.execute(sql, (new_name, session['user_id']))
 
             conn.commit()
-            session['user_name'] = new_name
-            return "<script>alert('정보수정완료'); location.href='/mypage';</script>"
+            session['user_name'] = new_name  # 세션 이름 정보도 갱신
+            return "<script>alert('정보가 수정되었습니다.'); location.href='/mypage';</script>"
 
-    except Exception as e:  # 예외 발생시 실행문
+    except Exception as e: # 예외 발생시 실행문
         print(f"정보수정 에러 : {e}")
-        print("/n member_edit() 메서드를 확인하세요")
+        return "member_edit() 메서드를 확인하세요"
 
-    finally: conn.close() # DB연결 종료!
+    finally:
+        conn.close()  # DB연결 종료!
 
 @app.route('/mypage') # http://localhost:5000/mypage get요청시 처리됨
 def mypage() :
@@ -153,12 +159,13 @@ def mypage() :
             # 2. 내가 쓴 게시글 개수 조회(작성하신 boards 테이블 활용)
             cursor.execute("SELECT COUNT(*) as board_count FROM boards WHERE member_id = %s ",(session['user_id'],))
             #                                                   boards 테이블에 조건 member_id 값을 가지고 찾아옴
-            board_count = cursor.fetchone() # 개수를 세어 fetchone()에 넣음 -> board_count이름으로 갯수를 가지고잇음
+            board_count = cursor.fetchone()['board_count'] # 개수를 세어 fetchone()에 넣음 -> board_count이름으로 갯수를 가지고잇음
 
             return render_template('mypage.html', user =user_info, board_count=board_count)
             # 결과반환                                mypage.html 에게 user객체와 board_count객체를 담아 보냄
             # 프론트에서 사용하려면 {{user.?????}}, {{board_count}}
-    finally: conn.close()
+    finally:
+        conn.close()
 
 @app.route('/') # url 생성용 코드 http://localhost:5000/
                 #             or http://192.168.0.0~~~ :5000/
