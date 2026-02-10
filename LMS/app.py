@@ -10,6 +10,8 @@
 from flask import Flask, render_template, request , redirect, url_for, session
 #                플라스크,  프론트 연결,     요청,응답,  주소전달 , 주소생성 , 상태저장소
 from common.session import Session
+from LMS.domain import Board
+import math
 app = Flask(__name__)
 app.secret_key = 'aaaaaaaaa'
 # 세션을 사용하기 위해 보안키 설정 (아무 문자열이나 입력 )
@@ -56,7 +58,7 @@ def login():
 
         else : # 찾은 계정이 없다
             return "<script>alert('ID / PW 오류'); history.back();</script>"
-            # BOM 브라우저 메서드, 경고창 alret       페이지 뒤로 이동하기
+            # BOM 브라우저 메서드, 경고창 alert       페이지 뒤로 이동하기
 
     finally:
         conn.close() #DB연결 종료 꼭!
@@ -164,8 +166,182 @@ def mypage() :
             return render_template('mypage.html', user =user_info, board_count=board_count)
             # 결과반환                                mypage.html 에게 user객체와 board_count객체를 담아 보냄
             # 프론트에서 사용하려면 {{user.?????}}, {{board_count}}
+            # redirect와 url은 셋트 , get으로 호출해서 보여줄때
+            # render_template은 html. 으로 객체 보낼때 사용
     finally:
         conn.close()
+
+ ####################################회원 crud end##############################################################################
+
+ ###################################게시판 CRUD####################################################################
+# 1.게시글 보기
+@app.route('/board') #http://localhost:5000/board # 기본적으로 get방식
+def board_list():
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            #작성자 이름을 함께 가져오기 위해 JOIN사용
+            sql = """
+            SELECT b.*,m.name as writer_name
+            FROM boards b 
+            JOIN members m ON b.member_id = m.id
+            ORDER BY b.id DESC
+            """
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            boards = [Board.from_db(row) for row in rows]
+            return render_template('board_list.html',boards=boards)
+            # redirect와 url은 셋트 , get으로 호출해서 보여줄때
+            # render_template은 html. 으로 객체 보낼때 사용
+    finally:
+        conn.close()
+
+# 2. 게시글 자세히보기 # http://localhost:5000/board/view/99 (게시글 번호)
+@app.route('/board/view/<int:board_id>')
+def board_view(board_id):
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # JOIN을 통해 작성자 정보 (name, id)를 함께조회
+            sql = """
+                SELECT b.*,m.name as writer_name , m.uid as writer_uid
+                FROM boards b 
+                JOIN members m ON b.member_id = m.id
+                WHERE b.id = %s
+               """
+            cursor.execute(sql, (board_id,))
+            row = cursor.fetchone()
+            print(row)
+
+            if not row :
+                return "<script>alert ('존재하지 않는 게시글');history.back()</script>"
+
+            #Board 객체로 변환 (앞서작성한 Board.py의 from_db활용)
+            board = Board.from_db(row)
+            return render_template('board_view.html', board= board)
+    finally:
+        conn.close()
+
+@app.route('/board/edit/<int:board_id>', methods=['GET', 'POST'])
+def board_edit(board_id):
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 1. 화면 보여주기(기존데이터 로드)
+            if request.method == 'GET':
+                sql = "SELECT * FROM boards WHERE id = %s"
+                cursor.execute(sql, (board_id,))
+                row = cursor.fetchone()
+
+                if not row :
+                    return "<script>alert('존재하지 않는 게시글입니다.'); history.back();</script>"
+
+                # 본인 확인 로직
+                if row['member_id'] != session.get('user_id'):
+                    return "<script>alert('수정 권한이 없습니다.'); history.back();</script>"
+                print(row)
+                board = Board.from_db(row)
+                return render_template('board_edit.html', board=board)
+
+            # 2. 실제 Db업데이트 처리
+            elif request.method == 'POST':
+                title = request.form.get('title')
+                content = request.form.get('content')
+
+                sql = "UPDATE boards SET title = %s, content = %s WHERE id = %s"
+                cursor.execute(sql, (title, content, board_id))
+                conn.commit()
+
+                return redirect(url_for('board_view', board_id=board_id))
+    finally:
+        conn.close()
+
+# 3. 게시물삭제  작성자본인게시물삭제 확인단계필요
+@app.route('/board/delete/<int:board_id>')
+def board_delete(board_id):
+    # 로그인 여부 확인 (필요시)
+    # if 'user_id' not in session:
+    #     return '<script>alert("로그인 후 이용 가능합니다."); location.href="/login";</script>'
+
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 본인 확인 로직을 추가하고 싶다면 WHERE member_id = %s 를 추가하세요.
+            sql = "DELETE FROM boards WHERE id = %s"  # 저장된 테이블명 boards 사용
+            cursor.execute(sql, (board_id,))
+            conn.commit()
+
+            if cursor.rowcount > 0:
+                print(f"게시글 {board_id}번 삭제 성공")
+            else:
+                return "<script>alert('삭제할 게시글이 없거나 권한이 없습니다.'); history.back();</script>"
+        return redirect(url_for('board_list'))
+
+    except Exception as e:
+        print(f"삭제 에러: {e}")
+        return "삭제 중 오류가 발생했습니다."
+
+    finally:
+        conn.close()
+
+
+
+
+
+
+
+@app.route('/board/write',methods=['GET','POST']) #http://localhost:5000/board/write
+def board_write():
+    #1. 사용자가 '글쓰기' 버튼을 눌러서 들어왔을 때 (화면보여주기)
+    if request.method == 'GET':
+        # 로그인 유무
+        if 'user_id' not in session:
+            return '<script>alert("로그인후 이용가능"); location.href="/login";</script>'
+        return render_template('board_write.html') #프론트 안만들어서 template에 만들기
+            # redirect와 url은 셋트 , get으로 호출해서 보여줄때
+            # render_template은 html. 으로 객체 보낼때 사용
+
+    #2. 사용자가 '등록하기' 버튼을 눌러서 데이터를 보냈을 때 (DB저장)
+    elif request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        #세션에 저장된 고르인 유저의id (member_id)
+        member_id = session.get('user_id')
+        conn = Session.get_connection()
+        try :
+            with conn.cursor() as cursor:
+                sql = "INSERT INTO boards(member_id,title,content) VALUES(%s,%s,%s)"
+                cursor.execute(sql, (member_id, title, content))
+                conn.commit()
+            return  redirect(url_for('board_list')) #저장 후 게시글 목록으로 이동 #http://localgo
+                # redirect와 url은 셋트 , get으로 호출해서 보여줄때
+                # render_template은 html. 으로 객체 보낼때 사용
+        except Exception as e :
+            print(f"글 작성 에러 : {e}")
+            return "저장 중 에러 발생"
+        finally:
+            conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/') # url 생성용 코드 http://localhost:5000/
                 #             or http://192.168.0.0~~~ :5000/
