@@ -1,4 +1,5 @@
 class Score:
+    # 1. 생성자 : 새로운 성적 객체를 만들때 실행되는 함수의 초기값 설정
     def __init__(self, member_id, kor, eng, math, id=None):
         self.id = id  # scores 테이블의 PK
         self.member_id = member_id  # members 테이블의 id와 연결된 FK

@@ -9,7 +9,7 @@
 #  templates : 동적 파일을 모아 놓은 ( CRUD화면, 레이아웃, index 등 ...)
 from flask import Flask, render_template, request , redirect, url_for, session
 #                플라스크,  프론트 연결,     요청,응답,  주소전달 , 주소생성 , 상태저장소
-from common.session import Session
+from common.Session import Session
 from LMS.domain import Board, Score
 import math
 app = Flask(__name__)

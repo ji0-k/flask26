@@ -1,4 +1,4 @@
-from LMS.common.session import Session # 로그인정보, db정보
+from LMS.common.Session import Session # 로그인정보, db정보
 from LMS.domain.Board import Board # oop Board 객체
 
 class BoardService:
@@ -49,3 +49,7 @@ class BoardService:
         finally:
             conn.close()
         print("=" * 60)
+
+    @classmethod
+    def write_board(cls):
+        pass
