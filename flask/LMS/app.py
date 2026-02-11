@@ -10,7 +10,7 @@
 from flask import Flask, render_template, request , redirect, url_for, session
 #                플라스크,  프론트 연결,     요청,응답,  주소전달 , 주소생성 , 상태저장소
 from common.session import Session
-from LMS.domain import Board
+from LMS.domain import Board, Score
 import math
 app = Flask(__name__)
 app.secret_key = 'aaaaaaaaa'
@@ -285,11 +285,6 @@ def board_delete(board_id):
         conn.close()
 
 
-
-
-
-
-
 @app.route('/board/write',methods=['GET','POST']) #http://localhost:5000/board/write
 def board_write():
     #1. 사용자가 '글쓰기' 버튼을 눌러서 들어왔을 때 (화면보여주기)
@@ -321,25 +316,191 @@ def board_write():
             return "저장 중 에러 발생"
         finally:
             conn.close()
+########################################게시판 종료###################################################
+
+########################################[ 성적 메뉴 ]###################################################
+#주의사항 : role에 admin과 manager만 cud를 제공한다 / USER에게는 자신의 성적  R 만 제공
+@app.route('/score/add') # http://localhost:5000/score/add?uid=test1&name=test1
+def add_score():
+    if session.get('user_role') not in ('admin','manager'):
+        return "<script>alert('권한 없음'); history.back();</script>"
+
+    target_uid = request.args.get('uid')
+    target_name = request.args.get('name')
+    # args.get : 주소를(URL) 통해 데이터가 넘어가는 값 주소뒤에 ?k=v&k=v ~~~
+
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 1. 대상 학생의 id 찾기
+            cursor.execute("SELECT id FROM members WHERE uid = %s",(target_uid,))
+            student = cursor.fetchone()
+
+            # 2. 기존의 성적이 있는지 조회
+            existing_score = None
+
+            if student :
+                cursor.execute("SELECT * FROM scores WHERE member_id = %s",(student['id'],))
+                row = cursor.fetchone()
+                print(row) # 테스트용 코드로 dict타입으로 콘솔 출력
+                if row :
+                    existing_score = Score.from_db(row)
+                    # 기존에 만든 Score.from_db활용
+                    # 위쪽 객체 로드 처리 : from LMS.domain import Board, Score
+
+            return render_template('score_form.html',
+            # html에 자료 전송하는코드
+                                   target_uid = target_uid,
+                                   target_name = target_name,
+                                   score = existing_score) # 객체전달
+
+    except Exception as e:
+        return {f"{e}": "데이터 조회 중 오류가 발생했습니다."}
+
+    finally:
+        conn.close()
 
 
+@app.route('/score/save',methods=['POST'])
+def score_save():
+    if session.get('user_role') not in ('admin','manager'):
+        return "권한오류", 403
+        #웹페이지 오류페이지로 교체
+
+    #폼 데이터 수집
+    target_uid = request.form.get('target_uid')
+    kor = int(request.form.get('korean',0))
+    eng = int(request.form.get('english',0))
+    math = int(request.form.get('math',0))
+
+    conn = Session.get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+            # 1. 대상학생의 id(pk) 가져오기 -> 학생의 고유 번호 가져오기
+            cursor.execute("SELECT id FROM members WHERE uid = %s",(target_uid,))
+            student = cursor.fetchone()
+            print(student) #학번 출력
+
+            if not student :
+                return "<script>alert('존재하지 않는 학생입니다.')</script>"
+
+            #2. Score 객체 생성 (계산 프로퍼티 활용)
+            temp_score = Score(member_id = student['id'],kor=kor,eng=eng,math=math)
+            #            __init__ 를 활용하여 객체 생성
+
+            #3. 기존 데이터가 있는지 확인
+            cursor.execute("SELECT id FROM scores WHERE member_id = %s",(student['id'],))
+            is_exist = cursor.fetchone()
+
+            if is_exist: # 성적이 있으면 id 나오고 , 없으면 None처리
+                # UPDATE실행
+                sql = """
+                UPDATE scores SET korean = %s, english = %s, math = %s, 
+                                  total = %s, average=%s, grade=%s WHERE member_id = %s
+                """
+                cursor.execute(sql,(temp_score.kor,temp_score.eng, temp_score.math,
+                                    temp_score.total, temp_score.avg, temp_score.grade,
+                                    student['id']))
+
+            else :
+                # INSERT 실행
+                sql = """
+                    INSERT INTO scores(member_id,korean,english,math,total,average,grade)
+                    values (%s,%s,%s,%s,%s,%s,%s)
+                    """
+                cursor.execute(sql,(student['id'],temp_score.kor,temp_score.eng, temp_score.math,
+                                    temp_score.total, temp_score.avg, temp_score.grade))
+            conn.commit()
+            return f"<script>alert('{target_uid} 학생 성적 저장 완료'); location.href= '/score/list';</script>"
+
+    # except Exception as e:
+    #     return {f"{e}": "데이터 조회 중 오류가 발생했습니다."}
+
+    finally:
+        conn.close()
+
+@app.route('/score/list') # http://localhost:5000/score/list -> get
+def score_list():
+    # 1. 권한 체크 (관리자나 매니저만 볼 수 있게 설정)
+    if session.get('user_role') not in ('admin', 'manager'):
+        return "<script>alert('권한이 없습니다.'); history.back();</script>"
+
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 2. JOIN을 사용하여 학생 이름(name)과 성적 데이터를 함께 조회
+            # 성적이 없는 학생은 제외하고, 성적이 있는 학생들만 총점 순으로 정렬
+            sql = """
+                SELECT m.name, m.uid, s.* FROM scores s
+                JOIN members m ON s.member_id = m.id
+                ORDER BY s.total DESC
+            """
+
+            cursor.execute(sql)
+            datas = cursor.fetchall()
+            # print(f"sql결과 : {datas}")
 
 
+            # 3. DB에서 가져온 딕셔너리 리스트를 Score 객체 리스트로 변환
+            score_objects = [] #객체로 넣으려고 리스트 만들었다
+            for data in datas:
+                # Score 클래스에 정의하신 from_db 활용
+                s = Score.from_db(data)  # dict타입 Score객체로 만들어서 s라고 하기 [직렬화]
+                # 객체에 없는 이름(name) 정보는 수동으로 살짝 넣어주기, join에서 만든 값 사용
+                s.name = data['name']
+                s.uid = data['uid']
+                score_objects.append(s)
+            return render_template('score_list.html', scores=score_objects) #프론트에서 써먹으려고 위에서 객체로 만들어 객체로 보냄
+            #                                       프론트 화면 ui에, 성적담긴 객체 리스트 전달함
 
+    except Exception as e:
+        return {f"{e}": "성적리스트 조회 중 오류가 발생했습니다."}
 
+    finally:
+        conn.close()
 
+@app.route('/score/members') # http://localhost:5000/score/members -> get
+def score_members():
+    if session.get('user_role') not in ('admin', 'manager'):
+        return "<script>alert('권한이 없습니다.'); history.back();</script>"
 
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT m.id, m.uid, m.name, s.id AS score_id
+                FROM members m
+                LEFT JOIN scores s ON m.id = s.member_id
+                WHERE m.role = 'user'
+                ORDER BY m.name ASC
+            """
 
+            cursor.execute(sql)
+            members = cursor.fetchall()
+            return render_template('score_member_list.html', members=members)
+    finally:
+        conn.close()
 
+@app.route('/score/my') # http://localhost:5000/score/my -> get
+def score_my():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
 
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 내 ID로만 조회
+            sql = "SELECT * FROM scores WHERE member_id = %s"
+            cursor.execute(sql, (session['user_id'],))
+            row = cursor.fetchone()
 
+            # Score 객체로 변환 (from_db 활용)
+            score = Score.from_db(row) if row else None
 
-
-
-
-
-
-
+            return render_template('score_my.html', score=score)
+    finally:
+        conn.close()
 
 
 
