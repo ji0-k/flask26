@@ -1,17 +1,19 @@
 # pip install flask
 # 파이썬으로 만든 DB연동 콘솔 프로그램을 웹으로 연결하는 프레임 워크
 #  프레임 워크 : 미리 만들어놓은 틀 안에서 작업하는 공간
+import os
 
 #app.py는 플라스크로 서버를 동작하기 위한 파일명 (기본파일)
 
 # static, templates 폴더 필수 (프론트용 파일 모이는 곳)
 #  static : 정적 파일을 모아 놓은( HTML, CSS , JS ....)
 #  templates : 동적 파일을 모아 놓은 ( CRUD화면, 레이아웃, index 등 ...)
-from flask import Flask, render_template, request , redirect, url_for, session
-#                플라스크,  프론트 연결,     요청,응답,  주소전달 , 주소생성 , 상태저장소
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
+#                플라스크,  프론트 연결,     요청,응답,  주소전달 , 주소생성 , 상태저장소,
 from common.Session import Session
 from LMS.domain import Board, Score
-import math
+from LMS.service import PostService
+
 app = Flask(__name__)
 app.secret_key = 'aaaaaaaaa'
 # 세션을 사용하기 위해 보안키 설정 (아무 문자열이나 입력 )
@@ -501,8 +503,107 @@ def score_my():
             return render_template('score_my.html', score=score)
     finally:
         conn.close()
+########################################[ 성적 메뉴 종료 ]#################################################
+
+########################################[ 파일 게시판  ]###################################################
+# 파일처리용 게시판의 특징
+# 1. 파일 업로드 / 다운로드가 가능
+# 2. 단일 파일 / 다중파일 업로드 처리
+# 3. 서비스 패키지를 활용
+## 4. /UPLOAD 라는 폴더 사용 / 용량 제한 16MB
+# 5. 파일명 중복 방지용 코드 활용
+# 6. 부모객체 삭제시 자식객체 삭제 되게 CASCADE 처리
+
+UPLOAD_FOLDER = 'uploads/'
+#폴더가 없으면 자동생성
+if not os.path.exists(UPLOAD_FOLDER): # import os 상단에 추가
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+#최대 업로드 용량 제한 (예 16MB)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+# bit -> 0, 1
+# 1byte -> 8bit -> 0~255까지 256개의 값을 가지고 있다
+# 1kB -> 1024byte
+# 1MB -> 1024kbyte
+# 1GB -> 1024Mbyte
+# 1TB -> 1024Gbyte
+# 1PB -> 1024Tbyte
+# 1XB -> 1024Pbyte
+
+@app.route('/filesboard/write', methods=['GET', 'POST'])
+def filesboard_write():
+    # 세션에 사용자 정보가 없으면 로그인 페이지로 리다이렉트
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        title = request.form.get('title')  # 폼에서 제목 가져오기
+        content = request.form.get('content')  # 폼에서 내용 가져오기
+
+        # 핵심: getlist를 사용해야 여러 개의 파일을 리스트 형태로 한 번에 가져올 수 있습니다.
+        files = request.files.getlist('files')
+
+        # 서비스 레이어를 호출하여 게시글과 파일을 저장
+        if PostService.save_post(session['user_id'], title, content, files):
+            return "<script>alert('게시글이 등록되었습니다.'); location.href='/filesboard';</script>"
+        else:
+            return "<script>alert('등록 실패'); history.back();</script>"
+
+    # GET 요청 시 글쓰기 페이지 렌더링
+    return render_template('filesboard_write.html')
+
+# 파일 게시판 목록
+@app.route('/filesboard')
+def filesboard_list():
+    posts = PostService.get_posts()
+    return render_template('filesboard_list.html', posts=posts)
 
 
+# 파일 게시판 상세 보기
+@app.route('/filesboard/view/<int:post_id>')
+def filesboard_view(post_id):
+    post, files = PostService.get_post_detail(post_id) # 반환 2개이니까 받을 때도 2개로 받아야함
+    if not post:
+        return "<script>alert('해당 게시글이 없습니다.'); location.href='/filesboard';</script>"
+    return render_template('filesboard_view.html', post=post, files=files)
+                #                                                  여기서 리턴도 두개로 반환해야함
+
+# send_from_directory 사용하여 자료 다운로드 가능
+@app.route('/download/<path:filename>')
+def download_file(filename):
+    # 파일이 저장된 폴더(uploads)에서 파일을 찾아 전송합니다.
+    # 프론트 <a href="{{ url_for('download_file', filename=file.save_name) }}" ...> 이부분 처리용
+    # filename은 서버에 저장된 save_name입니다.
+    # 브라우저가 다운로드할 때 보여줄 원본 이름을 쿼리 스트링으로 받거나 DB에서 가져와야 합니다.
+
+    origin_name = request.args.get('origin_name') # 주소를 통해 넘어오는것
+    return send_from_directory('uploads/', filename, as_attachment=True, download_name=origin_name)
+    # from flask import send_from_directory (필수플라스크 내장 메서드)
+    #   return send_from_directory('uploads/', filename)는 브라우져에서 바로 열어버림
+    #   as_attachment=True 로 하면 파일 다운로드 창을 띄움
+    #   저장할 파일명은 download_name=origin_name 로 지정
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################################[ 파일 게시판 종료 ]###################################################
 
 @app.route('/') # url 생성용 코드 http://localhost:5000/
                 #             or http://192.168.0.0~~~ :5000/
