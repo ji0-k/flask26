@@ -1,12 +1,9 @@
-<!DOCTYPE html> <!--html5버전-->
-<html lang="ko">
+<!DOCTYPE html> <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--반응형웹-->
-    <title>종합 관리 시스템</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!--부트스트랩링크-->
-    <style>
-        body { padding-top: 70px; } /* 네비바에 가려지지 않게 설정 */
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>종합 관리 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <style>
+        body { padding-top: 70px; }
     </style>
 </head>
 <body>
@@ -19,31 +16,61 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/board">자유게시판</a><!--app.route에 넣으면 됨, route경로-->
+                        <a class="nav-link" href="/board">강의실</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/filesboard">자료실(파일게시판)</a>
+                        <a class="nav-link" href="/board">자유게시판</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/filesboard">자료실</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/board">출결관리</a>
+                    </li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="scoreDropdown" role="button" data-bs-toggle="dropdown">
                             성적관리
                         </a>
                         <ul class="dropdown-menu shadow">
-                            {# 1. user 로그인 사용자가 볼 수 있는 메뉴 #}
-                            {% if session.get('user_role') == 'user' %} <!--브라우저 세션에서 유저 아이디 가져와라-->
-                                <li><a class="dropdown-item" href="/score/my">내 성적 조회</a></li>
+                            {% if session.get('user_id') %}
+                                {% if session.get('user_role') < 4 %}
+                                    <li><a class="dropdown-item" href="/score/my">내 성적 조회</a></li>
+                                {% endif %}
+                                {% if session.get('user_role') >= 4 %}
+                                    <li><h6 class="dropdown-header">관리자 메뉴</h6></li>
+                                    <li><a class="dropdown-item" href="/score/members">학생 성적 입력</a></li>
+                                    <li><a class="dropdown-item" href="/score/list">전체 성적 현황</a></li>
+                                {% endif %}
+                            {% else %}
+                                <li><a class="dropdown-item" href="/login">로그인 후 이용하세요</a></li>
                             {% endif %}
+                        </ul>
+                    </li>
 
-                            {# 2. 관리자/매니저만 볼 수 있는 메뉴 #}<!--주석{# ...#}-->
-                            {% if session.get('user_role') in ('admin', 'manager') %} <!--플라스크코드-->
-                                <li><hr class="dropdown-divider"></li>
-                                <li><h6 class="dropdown-header">관리자 메뉴</h6></li>
-                                <li><a class="dropdown-item" href="/score/members">학생 성적 입력 (학생선택)</a></li>
-                                <li><a class="dropdown-item" href="/score/list">전체 성적 현황 (JOIN)</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="shopDropdown" role="button" data-bs-toggle="dropdown">
+                            교구몰
+                        </a>
+                        <ul class="dropdown-menu shadow">
+                            {% if session.get('user_id') %}
+                                <li><a class="dropdown-item" href="/shop/items">상품 보기</a></li>
+                                <li><a class="dropdown-item" href="/shop/cart">장바구니 보기</a></li>
+
+                                {% if session.get('user_role') >= 4 %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">관리자 메뉴</h6></li>
+                                    <li><a class="dropdown-item" href="/shop/sales">상품 주문 판매 현황</a></li>
+                                    <li><a class="dropdown-item" href="/shop/admin/items">상품 등록</a></li>
+
+                                {% endif %}
+                            {% else %}
+                                <li><a class="dropdown-item" href="/login">로그인 후 이용하세요</a></li>
                             {% endif %}
                         </ul>
                     </li>
                 </ul>
+
                 <ul class="navbar-nav">
                     {% if session.get('user_id') %}
                         <li class="nav-item">
@@ -69,9 +96,7 @@
     </nav>
 
     <div class="container">
-        <!--본문 영역으로 다른파일이 이 레이아웃을 겹쳐 보이게 처리하는용-->
-        <!--공통적으로 layout이 안에 들어간 컨텐츠 전반적으로 관리한다-->
-        {% block content %}<!--다른컨텐츠들이 이사이에 들어간다. ex. login.html, board.html...-->{% endblock %}
+        {% block content %}{% endblock %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

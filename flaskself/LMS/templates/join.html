@@ -19,6 +19,25 @@
                                 <label class="form-label">이름</label>
                                 <input type="text" name="name" class="form-control" placeholder="실명 입력" required>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">이메일(선택)</label>
+                                <div class = "input-group">
+                                    <input type ="text" name="email_id" class="form-control" placeholder="영문아이디" pattern="[A-Za-z]+">
+                                    <span class="input-group-text">@</span>
+                                    <input type="text" name="email_domain" class="form-control" placeholder="domain.com" pattern="[A-Za-z]+\.[A-Za-z]+">
+                                </div>
+                                <div class="form-text">이메일은 영문으로만 입력 가능합니다.</div>
+
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">주소 (선택)</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" id="address" name="address" class="form-control" placeholder="주소를 검색하세요" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="execDaumPostcode()">주소 검색</button>
+                                </div>
+                                <input type="text" name="address_detail" class="form-control" placeholder="상세 주소 입력">
+                            </div>
+
                             <button type="submit" class="btn btn-success w-100">가입하기</button>
                         </form>
                         <div class="mt-3 text-center">
@@ -29,4 +48,15 @@
             </div>
         </div>
     </div>
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        function execDaumPostcode() {
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분입니다.
+                    document.getElementById("address").value = data.address; // 주소 넣기
+                }
+            }).open();
+        }
+    </script>
 {% endblock %}

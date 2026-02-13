@@ -14,9 +14,9 @@ def main():
          MBC 아카데미 관리 시스템
         ==========================
         1. 회원가입  2. 로그인 3. 로그아웃
-        4. 회원관리  
-        5. 게시판  6. 성적관리 7. 상품몰
-        9. 종료
+        4. 회원관리  5. 게시판  6. 성적관리 
+        7. 출결관리  8. 교구몰 
+        0. 종료
         """)
         member = Session.login_member # None
         if member is None:
@@ -43,7 +43,12 @@ def main():
         elif sel == "6":
             print("성적관리 서비스로 진입합니다.")
             ScoreService.run()
-        elif sel == "9":
+        elif sel == "7":
+            print("출결관리 서비스로 진입합니다")
+            pass
+        elif sel == "8":
+            print("교구몰 서비스로 진입합니다.")
+        elif sel == "0":
             print("LMS 서비스를 종료합니다.")
             run = False
 # main() 종료

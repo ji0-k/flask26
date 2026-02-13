@@ -1,6 +1,57 @@
-{% extends 'layout.html' %} <!--html시작-->
+{% extends 'layout.html' %}
 {% block content %}
-    <br>
-    <h1>환영합니다 LMS 페이지입니다</h1>
-    <hr>
-{% endblock %}<!--html끝-->
+<style>
+    .lms-welcome-text {
+        font-size: clamp(1rem, 2.5vw, 1.5rem);
+    }
+</style>
+<div class="container mt-5">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold text-secondary">
+                {% if session.get('user_id') %}
+                    안녕하세요, {{ session['user_name'] }}님!
+                {% else %}
+                    안녕하세요! LMS 시스템입니다.
+                {% endif %}
+            </h1>
+            <p class="col-md-8 display-6 fs-5 text-muted">학습 관리 시스템에 오신 것을 환영합니다. <br>
+                오늘 진행할 강의와 성적을 확인해 보세요.</p>
+
+            <hr class="my-4">
+            <button class="btn btn-secondary btn-lg" type="button">내 강의실 바로가기</button>
+        </div>
+    </div>
+
+    <div class="row align-items-md-stretch">
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>강의 목록</h2>
+                <p>수강 중인 강의와 새로운 강의를 확인하세요.</p>
+                <a href="{{ url_for('main') }}" class="btn btn-outline-secondary" type="button">자세히 보기</a> </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>자료실</h2>
+                <p>학습 관련 자료 업로드 및 다운로드 .</p>
+                <button class="btn btn-outline-secondary" type="button">자료실가기</button>
+            </div>
+        </div>
+                <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>성적 및 통계</h2>
+                <p>이번 학기 나의 성적 추이와 과제 제출 현황을 분석합니다.</p>
+                <button class="btn btn-outline-secondary" type="button">리포트 보기</button>
+            </div>
+        </div>
+                <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>마이페이지</h2>
+                <p>내 정보 및 출결관리</p>
+                <button class="btn btn-outline-secondary" type="button">상세페이지</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
