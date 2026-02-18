@@ -1,8 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %}
 <div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow border-0">
+    <div class="col-md-6"> <div class="card shadow border-0">
             <div class="card-header bg-dark text-white text-center">
                 <h4 class="mb-0">회원 정보 수정</h4>
             </div>
@@ -11,22 +10,74 @@
                     <div class="mb-3">
                         <label class="form-label text-muted small">아이디 (변경 불가)</label>
                         <input type="text" class="form-control bg-light" value="{{ user.uid }}" readonly>
-                        {#                                      받은값 처리할 때는 {{}}중괄호 두개이다/수정안되게#}
-                        {#app.py에 있는 이것 return render_template('member_edit.html', user =user_info)#}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">이름</label>
+                        <label class="form-label fw-bold">이름</label>
                         <input type="text" name="name" class="form-control" value="{{ user.name }}" required>
-
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">새 비밀번호</label>
+                        <label class="form-label fw-bold">새 비밀번호</label>
                         <input type="password" name="password" class="form-control" placeholder="변경 시에만 입력하세요">
-                        <div class="form-text text-danger">* 비밀번호를 입력하지 않으면 기존 비밀번호가 유지됩니다.</div>
+                        <div class="form-text text-danger">* 입력하지 않으면 기존 비밀번호가 유지됩니다.</div>
                     </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">이메일 (선택)</label>
+                        <input type="email" name="email" class="form-control"
+                               value="{{ user.email if user.email else '' }}" placeholder="이메일 주소를 입력하세요">
+                        <div class="form-text">미입력 시 정보가 등록되지 않습니다.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">주소 (선택)</label>
+                        <input type="text" name="address" class="form-control"
+                               value="{{ user.address if user.address else '' }}" placeholder="주소를 입력하세요">
+                        <div class="form-text">미입력 시 정보가 등록되지 않습니다.</div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">백엔드 언어 변경</label>
+                        <div class="list-group">
+                            {% for item in ['Java', 'Python', 'Node.js'] %}
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="backend" value="{{ item }}"
+                                    {% if user.selected_backend == item %} checked {% endif %}> {{ item }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">서버 환경 변경</label>
+                        <div class="list-group">
+                            {% for item in ['AWS', 'Docker'] %}
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="server" value="{{ item }}"
+                                    {% if user.selected_server == item %} checked {% endif %}> {{ item }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">데이터베이스 변경</label>
+                        <div class="list-group">
+                            {% for item in ['MySQL', 'Oracle'] %}
+                            <label class="list-group-item">
+                                <input class="form-check-input me-2" type="radio" name="db" value="{{ item }}"
+                                    {% if user.selected_db == item %} checked {% endif %}> {{ item }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
                     <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">수정 완료</button>
-                        <a href="/mypage" class="btn btn-outline-secondary">취소</a>
+                        <button type="submit" class="btn btn-primary py-2">수정 완료</button>
+                        <a href="/mypage" class="btn btn-outline-secondary py-2">취소</a>
                     </div>
                 </form>
             </div>
