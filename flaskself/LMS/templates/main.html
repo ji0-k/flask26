@@ -4,74 +4,54 @@
     .lms-welcome-text {
         font-size: clamp(1rem, 2.5vw, 1.5rem);
     }
-    /* 카드에 마우스를 올렸을 때 살짝 떠오르는 효과 */
-    .hover-shadow:hover {
-        transform: translateY(-5px);
-        transition: all 0.3s ease;
-    }
 </style>
-
 <div class="container mt-5">
-    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
         <div class="container-fluid py-5">
-            <h1 class="display-5 fw-bold text-dark">
+            <h1 class="display-5 fw-bold text-secondary">
                 {% if session.get('user_id') %}
-                    어서오세요, <span class="text-primary">{{ session['user_name'] }}</span>님!
+                    안녕하세요, {{ session['user_name'] }}님!
                 {% else %}
                     안녕하세요! LMS 시스템입니다.
                 {% endif %}
             </h1>
-            <p class="col-md-8 fs-5 text-muted mt-3">
-                학습 관리 시스템에 오신 것을 환영합니다. <br>
-                {% if session.get('user_id') %}
-                    수강 중인 과목의 최신 공지사항과 성적을 확인해 보세요.
-                {% else %}
-                    로그인 후 수강 신청 및 성적 확인 서비스를 이용해 보세요.
-                {% endif %}
-            </p>
+            <p class="col-md-8 display-6 fs-5 text-muted">학습 관리 시스템에 오신 것을 환영합니다. <br>
+                오늘 진행할 강의와 성적을 확인해 보세요.</p>
 
             <hr class="my-4">
-
-            {% if session.get('user_id') %}
-                <a href="/mypage" class="btn btn-primary btn-lg px-4">내 학습 현황 보기</a>
-            {% else %}
-                <a href="/login" class="btn btn-dark btn-lg px-4">로그인 하기</a>
-            {% endif %}
+            <button class="btn btn-secondary btn-lg" type="button">내 강의실 바로가기</button>
         </div>
     </div>
 
     <div class="row align-items-md-stretch">
         <div class="col-md-6 mb-4">
-            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-list-ul"></i> 자유 게시판</h2>
-                <p class="text-muted">학우들과 자유롭게 정보를 공유하고 질문을 남겨보세요.</p>
-                <a href="{{ url_for('board_list') }}" class="btn btn-outline-primary">게시판 바로가기</a>
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>강의 목록</h2>
+                <p>수강 중인 강의와 새로운 강의를 확인하세요.</p>
+                <a href="{{ url_for('main') }}" class="btn btn-outline-secondary" type="button">자세히 보기</a> </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>자료실</h2>
+                <p>학습 관련 자료 업로드 및 다운로드 .</p>
+                <button class="btn btn-outline-secondary" type="button">자료실가기</button>
             </div>
         </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-file-earmark-arrow-up"></i> 자료실</h2>
-                <p class="text-muted">학습 관련 자료 업로드 및 다운로드가 가능합니다.</p>
-                <button class="btn btn-outline-secondary" onclick="alert('준비 중인 서비스입니다.')">자료실 가기</button>
+                <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>성적 및 통계</h2>
+                <p>이번 학기 나의 성적 추이와 과제 제출 현황을 분석합니다.</p>
+                <button class="btn btn-outline-secondary" type="button">리포트 보기</button>
             </div>
         </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-graph-up"></i> 성적 및 통계</h2>
-                <p class="text-muted">현재까지 등록된 나의 성적과 평균 학점을 분석합니다.</p>
-                <a href="/score/my" class="btn btn-outline-success">성적 리포트 보기</a>
-            </div>
-        </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-person-gear"></i> 마이페이지</h2>
-                <p class="text-muted">개인 정보 수정, 수강 과목 변경 및 작성 글 관리.</p>
-                <a href="/mypage" class="btn btn-outline-dark">상세페이지 바로가기</a>
+                <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm">
+                <h2>마이페이지</h2>
+                <p>내 정보 및 출결관리</p>
+                <button class="btn btn-outline-secondary" type="button">상세페이지</button>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+

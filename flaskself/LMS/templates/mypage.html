@@ -1,87 +1,46 @@
 {% extends 'layout.html' %}
+<!---->
 {% block content %}
 <div class="row justify-content-center mt-5">
-    <div class="col-md-9"> <div class="card shadow border-0">
-            <div class="card-header bg-dark text-white py-3">
+    <div class="col-md-8">
+        <div class="card shadow border-0">
+            <div class="card-header bg-secondary text-white py-3">
                 <h4 class="mb-0"><i class="bi bi-person-circle"></i> 마이페이지</h4>
             </div>
             <div class="card-body p-4">
-                <div class="row">
+                <div class="row align-items-center">
                     <div class="col-md-4 text-center border-end">
-                        <div class="display-3 text-secondary mb-3">
-                            <i class="bi bi-person-badge"></i>
+                        <div class="display-1 text-secondary mb-3">
+                            <i class="bi bi-person-bounding-box"></i>
                         </div>
-                        <h3 class="fw-bold">{{ user.name }}님</h3>
-                        <span class="badge bg-primary px-3 py-2 mb-3">
-                            {% if user.role == 5 %}
-                                ADMIN
-                            {% elif user.role == 4 %}
-                                MANAGER
-                            {% elif user.role == 3 %}
-                                SPECIAL
-                            {% elif user.role == 2 %}
-                                VIP
-                            {% else %}
-                                USER
-                            {% endif %}
-                        </span>
-                            <div class="card bg-light border-0 mt-3">
-                            <div class="card-body">
-                                <small class="text-muted d-block mb-1">현재 평균 점수</small>
-                                <h4 class="fw-bold text-primary">{{ "%.1f"|format(user.average) if user.average else '0.0' }}점</h4>
-                                <span class="badge bg-success">학점: {{ user.grade if user.grade else '-' }}</span>
-                            </div>
-                        </div>
+                        <h4 class="fw-bold">{{ user.name }}</h4>
+                        <span class="badge bg-primary">{{ user.role.upper() }}</span>
                     </div>
-
                     <div class="col-md-8 ps-md-5">
-                        <h5 class="text-muted border-bottom pb-2 mb-3">내 수강 정보</h5>
-                        <div class="row mb-4">
-                            <div class="col-4 text-center">
-                                <small class="d-block text-muted">백엔드</small>
-                                <strong class="text-dark">{{ user.selected_backend if user.selected_backend else '미선택' }}</strong>
-                            </div>
-                            <div class="col-4 text-center">
-                                <small class="d-block text-muted">서버</small>
-                                <strong class="text-dark">{{ user.selected_server if user.selected_server else '미선택' }}</strong>
-                            </div>
-                            <div class="col-4 text-center">
-                                <small class="d-block text-muted">데이터베이스</small>
-                                <strong class="text-dark">{{ user.selected_db if user.selected_db else '미선택' }}</strong>
-                            </div>
+                        <h5 class="text-muted border-bottom pb-2">기본 정보</h5>
+                        <div class="mb-3 mt-3">
+                            <strong>아이디:</strong> <span>{{ user.uid }}</span>
                         </div>
-
-                        <h5 class="text-muted border-bottom pb-2">연락처 및 개인정보</h5>
-                        <div class="mt-3">
-                            <p><strong>아이디:</strong> {{ user.uid }}</p>
-                            <p><strong>이메일:</strong> {{ user.email if user.email else '등록된 이메일 없음' }}</p>
-                            <p><strong>주소:</strong> {{ user.address if user.address else '등록된 주소 없음' }}</p>
-                            <p><strong>가입일:</strong> {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else "날짜없음" }}</p>
+                        <div class="mb-3">
+                            <strong>가입일:</strong> <span>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else "날짜없음" }}</span>
                         </div>
-
-                        <h5 class="text-muted border-bottom pb-2 mt-4">활동 현황</h5>
-                        <div class="row mt-3 g-2"> <div class="col-3">
-                                <div class="card bg-light border-0 shadow-sm text-center p-2">
-                                    <small class="text-muted d-block small">게시글</small>
-                                    <strong class="h6 mb-0">{{ board_count }}</strong>
+                        
+                        <h5 class="text-muted border-bottom pb-2 mt-4">활동 요약</h5>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted d-block">작성 게시글</small>
+                                        <a href="/board/my" class="h4 fw-bold text-decoration-none">{{ board_count }}건</a>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-3">
-                                <div class="card bg-light border-0 shadow-sm text-center p-2">
-                                    <small class="text-muted d-block small">댓글</small>
-                                    <strong class="h6 mb-0">{{ comment_count }}</strong>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="card bg-light border-0 shadow-sm text-center p-2">
-                                    <small class="text-muted d-block small">추천수</small>
-                                    <strong class="h6 mb-0 text-danger">{{ total_likes }}</strong>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="card bg-light border-0 shadow-sm text-center p-2">
-                                    <small class="text-muted d-block small">성적표</small>
-                                    <a href="/score/my" class="h6 mb-0 text-success text-decoration-none">확인</a>
+                            <div class="col-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted d-block">성적 등록 여부</small>
+                                        <a href="/score/my" class="h4 fw-bold text-success text-decoration-none">확인하기</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -89,8 +48,8 @@
                 </div>
             </div>
             <div class="card-footer bg-white border-0 text-end p-4">
-                <a href="/member/edit" class="btn btn-warning text-white px-4">정보 수정</a>
-                <a href="/" class="btn btn-outline-secondary px-4">홈으로</a>
+                <a href="/member/edit" class="btn btn-warning btn-sm text-white">정보 수정</a>
+                <button class="btn btn-outline-secondary btn-sm" onclick="location.href='/'">홈으로</button>
             </div>
         </div>
     </div>
