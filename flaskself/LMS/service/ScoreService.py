@@ -83,12 +83,12 @@ class ScoreService:
                     return  # 객체가 있으면 아래 문 실행
 
                 # 2. 점수 입력
-                kor = int(input("국어: "))
-                eng = int(input("영어: "))
-                math = int(input("수학: "))
+                db_val = int(input("데이터베이스: "))
+                server_val = int(input("서버: "))
+                backend_val = int(input("백엔드: "))
 
                 # 3. 데이터 전용 그릇 Score 객체를 생성 (여기서 파이썬의 @property가 계산됨)
-                temp_score = Score(member_id=student['id'], kor=kor, eng=eng, math=math)
+                temp_score = Score(member_id=student['id'], db=db_val, server=server_val, backend=backend_val)
 
                 # 4. DB 저장 (객체의 프로퍼티 값을 SQL에 전달)
                 cursor.execute("SELECT id FROM scores WHERE member_id = %s", (student['id'],))
@@ -97,29 +97,29 @@ class ScoreService:
                 if cursor.fetchone():  # 있으면 true 없으면 false
                     # UPDATE 로직
                     sql = """
-                          UPDATE scores \
-                          SET korean=%s, \
-                              english=%s, \
-                              math=%s, \
-                              total=%s, \
-                              average=%s, \
+                          UPDATE scores 
+                          SET db=%s, 
+                              server=%s, 
+                              backend=%s, 
+                              total=%s, 
+                              average=%s, 
                               grade=%s
-                          WHERE member_id = %s \
+                          WHERE member_id = %s
                           """
                     # 객체의 프로퍼티(temp_score.total 등)를 사용합니다.
                     cursor.execute(sql, (
-                        temp_score.kor, temp_score.eng, temp_score.math,
+                        temp_score.db, temp_score.server, temp_score.backend,
                         temp_score.total, temp_score.avg, temp_score.grade,
                         student['id']
                     ))
                 else:  # 기존에 성적이 없으면 실행 문
                     # INSERT 로직
                     sql = """
-                          INSERT INTO scores (member_id, korean, english, math, total, average, grade)
-                          VALUES (%s, %s, %s, %s, %s, %s, %s) \
+                          INSERT INTO scores (member_id, db, server, backend, total, average, grade)
+                          VALUES (%s, %s, %s, %s, %s, %s, %s)
                           """
                     cursor.execute(sql, (
-                        student['id'], temp_score.kor, temp_score.eng, temp_score.math,
+                        student['id'], temp_score.db, temp_score.server, temp_score.backend,
                         temp_score.total, temp_score.avg, temp_score.grade
                     ))
 
@@ -153,27 +153,27 @@ class ScoreService:
         # 도메인 모델(Score)에 계산 로직(@property)이 있으므로 s.total, s.avg 등을 그대로 사용
         print(
             f"ID:{uid:<10} | "
-            f"국어:{s.kor:>3} 영어:{s.eng:>3} 수학:{s.math:>3} | "
+            f"DB:{s.db:>3} 서버:{s.server:>3} 백엔드:{s.backend:>3} | "
             f"총점:{s.total:>3} 평균:{s.avg:>5.2f} | 등급 : {s.grade}"
         )
 
-        @classmethod
-        def view_all(cls):
-            print("\n[전체 성적 목록 - JOIN 결과]")
-            conn = Session.get_connection()
-            try:
-                with conn.cursor() as cursor:
-                    # members와 scores를 JOIN하여 아이디(uid)와 성적을 함께 가져옴
-                    sql = """
-                          SELECT m.uid, s.* \
-                          FROM scores s \
-                                   JOIN members m ON s.member_id = m.id \
-                          """
-                    cursor.execute(sql)
-                    datas = cursor.fetchall()  # .fatchall()은 모든값
+    @classmethod
+    def view_all(cls):
+        print("\n[전체 성적 목록 - JOIN 결과]")
+        conn = Session.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                # members와 scores를 JOIN하여 아이디(uid)와 성적을 함께 가져옴
+                sql = """
+                      SELECT m.uid, s.* \
+                      FROM scores s \
+                               JOIN members m ON s.member_id = m.id \
+                      """
+                cursor.execute(sql)
+                datas = cursor.fetchall()  # .fatchall()은 모든값
 
-                    for data in datas:
-                        s = Score.from_db(data)  # dict 타입을 객체로 만듬
-                        cls.print_score(s, data['uid'])  # 출력용 메서드에 주입
-            finally:
-                conn.close()
+                for data in datas:
+                    s = Score.from_db(data)  # dict 타입을 객체로 만듬
+                    cls.print_score(s, data['uid'])  # 출력용 메서드에 주입
+        finally:
+            conn.close()

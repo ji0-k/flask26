@@ -1,26 +1,26 @@
 class Score:
     # 1. 생성자 : 새로운 성적 객체를 만들때 실행되는 함수의 초기값 설정
-    def __init__(self, member_id, kor, eng, math, id = None):
+    def __init__(self, member_id, db, server, backend, id=None):
         self.id = id # scores 테이블의 PK,
         self.member_id = member_id # members테이블의 id와 연결된 FK
-        self.kor = kor
-        self.eng = eng
-        self.math = math
+        self.db = db
+        self.server = server
+        self.backend = backend
         # id는 DB에서 자동생성되므로 기본값 None (나중에 DB에 저장되면 생김)
 
     # 파이썬 계산 프로퍼티 ( 메서드 지만 변수처럼 써먹는다)
     # 예: score.total() 대신 score.total 로 사용 가능
     @property
     def total(self):
-        return self.kor + self.eng + self.math
+        return self.db + self.server + self.backend
 
     @property
     def average(self):
-        return (self.kor + self.eng + self.math) / 3
+        return (self.db + self.server + self.backend) / 3
 
     @property
     def grade(self):
-        average = self.average  # 위에서 만든 average 프로퍼티 사용
+        average = self.average # 위에서 만든 average 프로퍼티 사용
         if average >= 90:
             return "A"
         elif average >= 80:
@@ -45,9 +45,9 @@ class Score:
         return cls(
             id = row.get("id"),
             member_id = row.get("member_id"),
-            kor = int(row.get("kor",0)),
-            eng = int(row.get("eng",0)),
-            math = int(row.get("math",0))
+            db=int(row.get("db", 0)),
+            server=int(row.get("server", 0)),
+            backend=int(row.get("backend", 0))
             # row.get("키", 기본값): 딕셔너리에서 "키"의 값을 가져오되, 없으면 기본값 사용
         )
 

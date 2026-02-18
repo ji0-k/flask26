@@ -2,13 +2,13 @@
 
 {% block content %}
     <h2 class="mb-4">성적 결과 목록</h2>
-    <table class="table table-bordered text-center">
+    <table class="table table-bordered text-center align-middle shadow-sm">
         <thead class="table-dark">
             <tr>
-                <th>이름</th>
-                <th>국어</th>
-                <th>영어</th>
-                <th>수학</th>
+                <th>이름(ID)</th>
+                <th>데이터베이스</th>
+                <th>서버</th>
+                <th>백엔드</th>
                 <th>총점</th>
                 <th>평균</th>
                 <th>등급</th>
@@ -18,19 +18,38 @@
         <tbody>
             {% for s in scores %}
             <tr>
-                <td>{{ s.name }}</td>
-                <td>{{ s.kor }}</td>
-                <td>{{ s.eng }}</td>
-                <td>{{ s.math }}</td>
+                <td><strong>{{ s.name }}</strong> <br><small class="text-muted">{{ s.uid }}</small></td>
+
+                <td>{{ s.db }}</td>
+                <td>{{ s.server }}</td>
+                <td>{{ s.backend }}</td>
+
                 <td>{{ s.total }}</td>
-                <td>{{ s.avg }}</td>
-                <td><span class="badge {{ 'bg-success' if s.grade == 'A' else 'bg-secondary' }}">{{ s.grade }}</span></td>
-                <td>{{ s.created_at.strftime('%Y-%m-%d') if s.created_at }}</td>
+
+                <td class="fw-bold text-primary">{{ "%.2f"|format(s.average) }}</td>
+
+                <td>
+                    <span class="badge {{ 'bg-success' if s.grade == 'A'
+                                       else 'bg-primary' if s.grade == 'B'
+                                       else 'bg-warning' if s.grade == 'C'
+                                       else 'bg-danger' }}">
+                        {{ s.grade }}
+                    </span>
+                </td>
+
+                <td>{{ s.created_at.strftime('%Y-%m-%d') if s.created_at else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="py-4 text-muted">등록된 성적 데이터가 없습니다.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    <div class="text-end">
-        <a href="members" class="btn btn-primary">성적 입력하기</a>
+
+    <div class="text-end mt-3">
+        <a href="/score/members" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 성적 입력하기
+        </a>
     </div>
 {% endblock %}

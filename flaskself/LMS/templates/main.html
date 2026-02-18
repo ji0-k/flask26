@@ -4,15 +4,22 @@
     .lms-welcome-text {
         font-size: clamp(1rem, 2.5vw, 1.5rem);
     }
-    /* 카드에 마우스를 올렸을 때 살짝 떠오르는 효과 */
+    /* 카드 호버 효과 */
     .hover-shadow:hover {
         transform: translateY(-5px);
         transition: all 0.3s ease;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    /* 아이콘 크기 조절 */
+    .card-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        display: block;
     }
 </style>
 
 <div class="container mt-5">
-    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border">
+    <div class="p-5 mb-5 bg-light rounded-3 shadow-sm border">
         <div class="container-fluid py-5">
             <h1 class="display-5 fw-bold text-dark">
                 {% if session.get('user_id') %}
@@ -29,48 +36,62 @@
                     로그인 후 수강 신청 및 성적 확인 서비스를 이용해 보세요.
                 {% endif %}
             </p>
-
             <hr class="my-4">
-
             {% if session.get('user_id') %}
-                <a href="/mypage" class="btn btn-primary btn-lg px-4">내 학습 현황 보기</a>
+                <a href="/mypage" class="btn btn-primary btn-lg px-4">내 정보 보기</a>
             {% else %}
                 <a href="/login" class="btn btn-dark btn-lg px-4">로그인 하기</a>
             {% endif %}
         </div>
     </div>
 
-    <div class="row align-items-md-stretch">
+    <div class="row">
         <div class="col-md-6 mb-4">
             <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-list-ul"></i> 자유 게시판</h2>
-                <p class="text-muted">학우들과 자유롭게 정보를 공유하고 질문을 남겨보세요.</p>
-                <a href="{{ url_for('board_list') }}" class="btn btn-outline-primary">게시판 바로가기</a>
+                <h2 class="fw-bold"><i class="bi bi-door-open-fill text-info"></i> 강의실</h2>
+                <p class="text-muted">온라인 강의 시청 및 학습을 진행합니다.</p>
+                <a href="/studyroom" class="btn btn-outline-info">강의실 입장</a> </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
+                <h2 class="fw-bold"><i class="bi bi-cart-check-fill text-warning"></i> 교구몰</h2>
+                <p class="text-muted">교육에 필요한 각종 교재 및 학습 관련 제품을 구매할 수 있습니다.</p>
+                <a href="/shop/items" class="btn btn-outline-warning">상품 보러가기</a> </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
+                <h2 class="fw-bold"><i class="bi bi-calendar-check text-danger"></i> 출결관리</h2>
+                <p class="text-muted">나의 출석 현황을 확인하고 출결 증빙 서류를 관리합니다.</p>
+                <a href="/attendance" class="btn btn-outline-danger">출결 현황보기</a> </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
+                <h2 class="fw-bold"><i class="bi bi-chat-dots-fill text-primary"></i> 게시판 </h2>
+                <p class="text-muted">학우들과 소통하거나 학습에 필요한 자료를 확인해 보세요.</p>
+
+                <div class="d-flex gap-2">
+                    <a href="/board" class="btn btn-outline-primary flex-fill">자유게시판</a>
+
+                    <a href="/filesboard" class="btn btn-outline-secondary flex-fill">파일게시판</a>
+                </div>
             </div>
         </div>
 
         <div class="col-md-6 mb-4">
             <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-file-earmark-arrow-up"></i> 자료실</h2>
-                <p class="text-muted">학습 관련 자료 업로드 및 다운로드가 가능합니다.</p>
-                <button class="btn btn-outline-secondary" onclick="alert('준비 중인 서비스입니다.')">자료실 가기</button>
-            </div>
+                <h2 class="fw-bold"><i class="bi bi-bar-chart-line-fill text-success"></i> 성적 조회</h2>
+                <p class="text-muted">시험 결과와 과제 점수, 전체적인 학업 성취도를 분석합니다.</p>
+                <a href="/score/my" class="btn btn-outline-success">성적 리포트 보기</a> </div>
         </div>
 
         <div class="col-md-6 mb-4">
             <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-graph-up"></i> 성적 및 통계</h2>
-                <p class="text-muted">현재까지 등록된 나의 성적과 평균 학점을 분석합니다.</p>
-                <a href="/score/my" class="btn btn-outline-success">성적 리포트 보기</a>
-            </div>
-        </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="h-100 p-5 bg-white border rounded-3 shadow-sm hover-shadow">
-                <h2 class="fw-bold"><i class="bi bi-person-gear"></i> 마이페이지</h2>
-                <p class="text-muted">개인 정보 수정, 수강 과목 변경 및 작성 글 관리.</p>
-                <a href="/mypage" class="btn btn-outline-dark">상세페이지 바로가기</a>
-            </div>
+                <h2 class="fw-bold"><i class="bi bi-person-bounding-box text-dark"></i> 마이페이지</h2>
+                <p class="text-muted">내 프로필 정보 수정 및 수강 신청 내역을 관리합니다.</p>
+                <a href="/mypage" class="btn btn-outline-dark">개인정보 수정</a> </div>
         </div>
     </div>
 </div>

@@ -10,8 +10,7 @@
             </div>
 
             <div class="card-body p-5">
-                {% if score %}
-                    <div class="text-center mb-5">
+                {% if score and score.total > 0 %} <div class="text-center mb-5">
                         <h6 class="text-muted text-uppercase small fw-bold">종합 등급</h6>
                         <h1 class="display-1 fw-bold
                             {{ 'text-success' if score.grade == 'A'
@@ -25,16 +24,16 @@
                     <table class="table table-bordered text-center align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th width="33%">국어</th>
-                                <th width="33%">영어</th>
-                                <th width="33%">수학</th>
+                                <th width="33%">데이터베이스</th>
+                                <th width="33%">서버</th>
+                                <th width="33%">백엔드</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr class="fs-4">
-                                <td>{{ score.kor }}</td>
-                                <td>{{ score.eng }}</td>
-                                <td>{{ score.math }}</td>
+                                <td>{{ score.db if score.db else '미입력' }}</td>
+                                <td>{{ score.server if score.server else '미입력' }}</td>
+                                <td>{{ score.backend if score.backend else '미입력' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -49,7 +48,7 @@
                         <div class="col-6">
                             <div class="p-3 border rounded bg-light text-center">
                                 <small class="text-muted d-block">평균</small>
-                                <span class="h4 fw-bold text-primary">{{ score.avg }}</span>
+                                <span class="h4 fw-bold text-primary">{{ "%.2f"|format(score.average) if score.average else '0.00' }}</span>
                             </div>
                         </div>
                     </div>
