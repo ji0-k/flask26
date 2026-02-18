@@ -1,30 +1,62 @@
 {% extends 'layout.html' %}
-
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <h2 class="mb-4">자유 게시판</h2>
-        <table class="table table-hover">
+        <table class="table table-hover text-center align-middle">
             <thead class="table-dark">
                 <tr>
-                    <th>번호</th>
-                    <th>제목</th>
-                    <th>작성자</th>
-                    <th>날짜</th>
+                    <th style="width: 7%">번호</th>
+                    <th style="width: 43%">제목</th>
+                    <th style="width: 12%">작성자</th>
+                    <th style="width: 13%">날짜</th>
+                    <th style="width: 10%">조회</th>
+                    <th style="width: 15%">추천</th>
                 </tr>
             </thead>
             <tbody>
                 {% for b in boards %}
                 <tr>
                     <td>{{ b.id }}</td>
-                    <td><a href="/board/view/{{ b.id }}" class="text-decoration-none text-dark">{{ b.title }}</a></td>
-                    <td>{{ b.writer_name }}</td>
+                    <td class="text-start">
+                        <a href="/board/view/{{ b.id }}" class="text-decoration-none text-dark fw-medium">
+                            {{ b.title }}
+                            {% if b.comment_count > 0 %}
+                            <span class="text-primary small fw-bold">[{{ b.comment_count }}]</span>
+                            {% endif %}
+                        </a>
+                    </td>
+                    <td title="{{ b.writer_uid }}">{{ b.writer_name }}</td>
                     <td>{{ b.created_at.strftime('%Y-%m-%d') if b.created_at }}</td>
+                    <td>{{ b.view_count }}</td> <td>
+                        <span class="{{ 'text-danger fw-bold' if b.good_count > 0 else 'text-muted' }}">
+                            {{ b.good_count }}
+                        </span>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <div class="text-end">
+
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ 'disabled' if page <= 1 }}">
+                    <a class="page-link" href="{{ url_for('board_list', page=page-1) }}">이전</a>
+                </li>
+
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if p == page }}">
+                    <a class="page-link" href="{{ url_for('board_list', page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+
+                <li class="page-item {{ 'disabled' if page >= total_pages }}">
+                    <a class="page-link" href="{{ url_for('board_list', page=page+1) }}">다음</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="text-end mt-2">
             <a href="/board/write" class="btn btn-primary">글쓰기</a>
         </div>
     </div>

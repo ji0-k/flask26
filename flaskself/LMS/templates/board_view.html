@@ -1,42 +1,71 @@
 {% extends 'layout.html' %}
-
 {% block content %}
-
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <h2 class="mb-4">게시글 상세보기</h2>
-
-            <div class="card">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0">{{ board.title }}</h4>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <h4 class="mb-0">{{ board.title }}</h4>
+                <span><i class="bi bi-eye"></i> {{ board.view_count }}</span>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 pb-2 border-bottom text-muted">
+                    <strong>{{ board.writer_name }}</strong> ({{ board.writer_uid }}) | {{ board.created_at.strftime('%Y-%m-%d %H:%M') }}
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3 border-bottom pb-2">
-                        <div class="col-md-6">
-                            <strong>작성자:</strong> {{ board.writer_name }}
-                            <span class="text-muted">({{ board.writer_uid }})</span>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <strong>작성일:</strong>
-                            {{ board.created_at.strftime('%Y-%m-%d %H:%M') if board.created_at }}
-                        </div>
-                    </div>
+                <div class="view-content mb-5" style="white-space: pre-wrap; min-height: 150px;">{{ board.content }}</div>
 
-                    <div class="view-content mb-4">
-                        {{ board.content }}
-                    </div>
+                <div class="text-center mb-4">
+                    <a href="/board/like/{{ board.id }}" class="btn btn-outline-danger px-4 py-2">
+                        <i class="bi bi-heart-fill"></i> 좋아요 {{ board.good_count }}
+                    </a>
+                </div>
 
-                    <div class="text-center">
-                        <a href="/board" class="btn btn-secondary">목록으로</a>
-
-                        {# 작성자 본인에게만 보이도록 나중에 세션 처리 예정 #}
-                        <a href="/board/edit/{{ board.id }}" class="btn btn-warning">수정</a>
-                        <a href="/board/delete/{{ board.id }}" class="btn btn-danger"
-                           onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a>
-                    </div>
+                <div class="text-center pt-3 border-top">
+                    <a href="/board" class="btn btn-secondary">목록</a>
+                    {% if session.get('user_id') == board.member_id %}
+                    <a href="/board/edit/{{ board.id }}" class="btn btn-warning">수정</a>
+                    <a href="/board/delete/{{ board.id }}" class="btn btn-danger" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    </div>
 
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="mb-4">댓글 <span class="text-primary">{{ comments|length }}</span></h5>
+
+                <div class="comment-list mb-4">
+                    {% for c in comments %}
+                    <div class="border-bottom py-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <div>
+                                <strong>{{ c.writer_name }}</strong>
+                                <small class="text-muted ms-2">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+
+                            {% if session.get('user_id') == c.member_id or session.get('user_role') >= 4 %}
+                            <a href="/comment/delete/{{ c.id }}"
+                               class="btn btn-link btn-sm text-danger text-decoration-none"
+                               onclick="return confirm('이 댓글을 삭제하시겠습니까?')">
+                                <i class="bi bi-trash"></i> 삭제
+                            </a>
+                            {% endif %}
+                        </div>
+                        <p class="mb-0 text-secondary">{{ c.content }}</p>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">첫 댓글을 남겨보세요!</p>
+                    {% endfor %}
+                </div>
+
+                <form action="/comment/write" method="POST" class="bg-light p-3 rounded">
+                    <input type="hidden" name="board_id" value="{{ board.id }}">
+                    <div class="input-group">
+                        <textarea name="content" class="form-control" rows="2" placeholder="댓글을 입력해주세요" required></textarea>
+                        <button type="submit" class="btn btn-primary px-4">등록</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
