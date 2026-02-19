@@ -82,8 +82,22 @@ def join():
     uid = request.form.get('uid')
     password = request.form.get('password')
     name = request.form.get('name')
-    email = request.form.get('email', '')
+
+   # --- 이메일 처리 부분 수정 ---
+    email_id = request.form.get('email_id', '')  # HTML의 name="email_id" 값 가져오기
+    email_domain = request.form.get('email_domain', '')  # HTML의 name="email_domain" 값 가져오기
+
+    # 두 값을 합쳐서 하나의 이메일 주소로 만듭니다.
+    if email_id and email_domain:
+        email = f"{email_id}@{email_domain}"
+    else:
+        email = ""  # 값이 없으면 빈 문자열 혹은 None 처리
+
+    # --- 주소 처리 부분도 수정 (상세주소 포함) ---
     address = request.form.get('address', '')
+    address_detail = request.form.get('address_detail', '')
+    address = f"{address} {address_detail}".strip()
+    # ---------------------------------------
 
     conn = Session.get_connection()  # 데이터베이스 연결
     try:
@@ -430,6 +444,73 @@ def comment_delete(comment_id):
                 return "<script>alert('삭제 권한이 없습니다.'); history.back();</script>"
     finally:
         conn.close()
+@app.route('/board/write',methods=['GET','POST']) #http://localhost:5000/board/write
+def board_write():
+    #1. 사용자가 '글쓰기' 버튼을 눌러서 들어왔을 때 (화면보여주기)
+    if request.method == 'GET':
+        # 로그인 유무
+        if 'user_id' not in session:
+            return '<script>alert("로그인후 이용가능"); location.href="/login";</script>'
+        return render_template('board_write.html') #프론트 안만들어서 template에 만들기
+            # redirect와 url은 셋트 , get으로 호출해서 보여줄때
+            # render_template은 html. 으로 객체 보낼때 사용
+
+    #2. 사용자가 '등록하기' 버튼을 눌러서 데이터를 보냈을 때 (DB저장)
+    elif request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        #세션에 저장된 고르인 유저의id (member_id)
+        member_id = session.get('user_id')
+        conn = Session.get_connection()
+        try :
+            with conn.cursor() as cursor:
+                sql = "INSERT INTO boards(member_id,title,content) VALUES(%s,%s,%s)"
+                cursor.execute(sql, (member_id, title, content))
+                conn.commit()
+            return  redirect(url_for('board_list')) #저장 후 게시글 목록으로 이동 #http://localgo
+                # redirect와 url은 셋트 , get으로 호출해서 보여줄때
+                # render_template은 html. 으로 객체 보낼때 사용
+        except Exception as e :
+            print(f"글 작성 에러 : {e}")
+            return "저장 중 에러 발생"
+        finally:
+            conn.close()
+
+
+@app.route('/board/edit/<int:board_id>', methods=['GET', 'POST'])
+def board_edit(board_id):
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 1. 화면 보여주기(기존데이터 로드)
+            if request.method == 'GET':
+                sql = "SELECT * FROM boards WHERE id = %s"
+                cursor.execute(sql, (board_id,))
+                row = cursor.fetchone()
+
+                if not row :
+                    return "<script>alert('존재하지 않는 게시글입니다.'); history.back();</script>"
+
+                # 본인 확인 로직
+                if row['member_id'] != session.get('user_id'):
+                    return "<script>alert('수정 권한이 없습니다.'); history.back();</script>"
+                print(row)
+                board = Board.from_db(row)
+                return render_template('board_edit.html', board=board)
+
+            # 2. 실제 Db업데이트 처리
+            elif request.method == 'POST':
+                title = request.form.get('title')
+                content = request.form.get('content')
+
+                sql = "UPDATE boards SET title = %s, content = %s WHERE id = %s"
+                cursor.execute(sql, (title, content, board_id))
+                conn.commit()
+
+                return redirect(url_for('board_view', board_id=board_id))
+    finally:
+        conn.close()
+
 # ---------------------------------------------------------------------------------------------#
 # 파일처리용 게시판의 특징
 # 1. 파일 업로드 / 다운로드가 가능
@@ -802,7 +883,7 @@ def score_members():
                 SELECT m.id, m.uid, m.name, s.id AS score_id
                 FROM members m
                 LEFT JOIN scores s ON m.id = s.member_id
-                WHERE m.role <= 3
+                WHERE m.role <= 5
                 ORDER BY m.name ASC
             """
 
@@ -817,7 +898,7 @@ def score_my():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    conn = Session.get_connection()s
+    conn = Session.get_connection()
     try:
         with conn.cursor() as cursor:
             # 내 ID로만 조회
@@ -832,6 +913,351 @@ def score_my():
     finally:
         conn.close()
 ########################################[ 성적 메뉴 종료 ]#################################################
+
+########################################[ 교 구 몰 ]#################################################
+
+@app.route('/shop/items')
+def shop_list():
+    """상품 전체 목록 보기"""
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # DB의 items 테이블에서 모든 상품 정보를 가져옵니다.
+            sql = "SELECT id, code, name, category, price, stock FROM items ORDER BY id DESC"
+            cursor.execute(sql)
+            items = cursor.fetchall()
+        return render_template('shop_items.html', items=items)
+    except Exception as e:
+        print(f"상품 목록 조회 오류: {e}")
+        return "상품을 불러오는 중 오류가 발생했습니다."
+    finally:
+        conn.close()
+
+
+@app.route('/shop/add_cart', methods=['POST'])
+def shop_add_cart():
+    """장바구니에 담기 (세션 활용)"""
+    if 'user_id' not in session:
+        return "<script>alert('로그인이 필요합니다.'); location.href='/login';</script>"
+
+    item_id = request.form.get('item_id')
+    qty = int(request.form.get('qty', 1))
+
+    # 장바구니는 DB가 아닌 세션에 리스트 형태로 임시 저장합니다.
+    if 'cart' not in session:
+        session['cart'] = []
+
+    cart = session['cart']
+    # 이미 담긴 상품인지 확인 후 수량만 조절하거나 새로 추가
+    for item in cart:
+        if item['id'] == item_id:
+            item['qty'] += qty
+            break
+    else:
+        cart.append({'id': item_id, 'qty': qty})
+
+    session['cart'] = cart  # 변경된 장바구니 세션 업데이트
+    session.modified = True
+
+    return "<script>alert('장바구니에 담겼습니다.'); location.href='/shop/items';</script>"
+
+
+@app.route('/shop/cart')
+def shop_cart():
+    """장바구니 보기"""
+    if 'user_id' not in session:
+        return "<script>alert('로그인이 필요합니다.'); location.href='/login';</script>"
+
+    cart_items = session.get('cart', [])  # 세션에서 장바구니 리스트 가져오기
+    display_cart = []  # 화면에 뿌려줄 상세 데이터 리스트
+    total_payment = 0  # 총 결제 금액
+
+    if cart_items:
+        conn = Session.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                for cart in cart_items:
+                    # 기존 items 테이블 컬럼명 그대로 사용
+                    sql = "SELECT id, name, price FROM items WHERE id = %s"
+                    cursor.execute(sql, (cart['id'],))
+                    item = cursor.fetchone()
+
+                    if item:
+                        item_total = item['price'] * cart['qty']  # 품목별 합계
+                        total_payment += item_total
+                        # 상세 정보 합치기
+                        display_cart.append({
+                            'id': item['id'],
+                            'name': item['name'],
+                            'price': item['price'],
+                            'qty': cart['qty'],
+                            'subtotal': item_total
+                        })
+        finally:
+            conn.close()
+
+    return render_template('shop_cart.html', cart=display_cart, total_payment=total_payment)
+
+
+@app.route('/shop/cart/delete/<int:item_id>')
+def shop_cart_delete(item_id):
+    """장바구니에서 특정 상품 삭제"""
+    if 'cart' in session:
+        # 세션의 cart 리스트에서 id가 일치하지 않는 것들만 남깁니다 (필터링)
+        # item['id']가 문자열일 수 있으므로 str()로 변환하여 비교합니다.
+        session['cart'] = [item for item in session['cart'] if str(item['id']) != str(item_id)]
+        session.modified = True  # 세션 변경 사항 강제 반영
+
+    return redirect(url_for('shop_cart'))
+
+@app.route('/shop/cart/clear')
+def shop_cart_clear():
+    """장바구니 전체 비우기"""
+    session.pop('cart', None) # 세션에서 cart 항목 자체를 제거
+    return redirect(url_for('shop_cart'))
+
+
+@app.route('/shop/checkout', methods=['POST'])
+def shop_checkout():
+    if 'user_id' not in session:
+        return "<script>alert('로그인이 필요합니다.'); location.href='/login';</script>"
+
+    cart_items = session.get('cart', [])
+    if not cart_items:
+        return "<script>alert('장바구니가 비어있습니다.'); location.href='/shop/items';</script>"
+
+    # --- 주문서 폼에서 보낸 데이터 가져오기 ---
+    order_email = request.form.get('order_email')  # 사용자가 확인/수정한 이메일
+    order_phone = request.form.get('order_phone')  # 새로 입력한 핸드폰 번호
+    order_address = request.form.get('order_address')  # 확인/수정한 배송 주소
+    # ---------------------------------------
+
+    member_id = session['user_id']
+    total_payment = 0
+
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 1. 총 결제 금액 계산 및 재고 확인
+            processed_items = []
+            for cart in cart_items:
+                # items 테이블의 price와 stock을 가져옵니다.
+                cursor.execute("SELECT id, price, stock FROM items WHERE id = %s", (cart['id'],))
+                item = cursor.fetchone()
+
+                if item:
+                    # 재고 부족 체크
+                    if item['stock'] < cart['qty']:
+                        return f"<script>alert('재고가 부족합니다.'); history.back();</script>"
+
+                    item_total = item['price'] * cart['qty']
+                    total_payment += item_total
+                    processed_items.append({
+                        'id': item['id'],
+                        'qty': cart['qty'],
+                        'price': item['price']
+                    })
+
+            # 2. orders 테이블에 주문 메인 레코드 생성
+            # 만약 DB에 phone, address 컬럼을 추가했다면 아래 SQL에 포함시키면 됩니다.
+            sql_order = "INSERT INTO orders (member_id, total_price, status) VALUES (%s, %s, 'PAID')"
+            cursor.execute(sql_order, (member_id, total_payment))
+            order_id = conn.insert_id()
+
+            # 3. order_items 상세 내역 저장 및 items 재고 차감
+            for item in processed_items:
+                # 상세 내역 저장
+                sql_item = "INSERT INTO order_items (order_id, item_id, qty, price) VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql_item, (order_id, item['id'], item['qty'], item['price']))
+
+                # 재고 차감
+                sql_update_stock = "UPDATE items SET stock = stock - %s WHERE id = %s"
+                cursor.execute(sql_update_stock, (item['qty'], item['id']))
+
+            conn.commit()
+            session.pop('cart', None)  # 주문 완료 후 장바구니 비우기
+
+            return redirect(url_for('shop_order_success', order_id=order_id))
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"주문 최종 처리 오류 : {e}")
+        return "<script>alert('서버 오류로 주문에 실패했습니다.'); history.back();</script>"
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/order_form')
+def shop_order_form():
+    """주문 정보 입력 페이지 (이메일, 주소, 연락처 확인)"""
+    if 'user_id' not in session:
+        return "<script>alert('로그인이 필요합니다.'); location.href='/login';</script>"
+
+    # 1. 장바구니 비어있는지 확인
+    if not session.get('cart'):
+        return "<script>alert('장바구니가 비어있습니다.'); location.href='/shop/items';</script>"
+
+    # 2. 기존 회원 정보 불러오기 (이메일, 주소 등)
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # members 테이블에서 기존 가입 정보를 가져옵니다.
+            sql = "SELECT email, address, name FROM members WHERE id = %s"
+            cursor.execute(sql, (session['user_id'],))
+            user_info = cursor.fetchone()
+
+            # 장바구니 합계 금액 계산 (화면 표시용)
+            total_payment = 0
+            for cart in session['cart']:
+                cursor.execute("SELECT price FROM items WHERE id = %s", (cart['id'],))
+                item = cursor.fetchone()
+                if item:
+                    total_payment += item['price'] * cart['qty']
+
+        return render_template('shop_order_form.html', user=user_info, total_payment=total_payment)
+    finally:
+        conn.close()
+
+
+@app.route('/shop/order_success/<int:order_id>')
+def shop_order_success(order_id):
+    """주문 완료 페이지"""
+    return render_template('shop_success.html', order_id=order_id)
+
+@app.route('/myorder')
+def my_order_list():
+    """로그인한 사용자의 주문 내역 보기"""
+    if 'user_id' not in session:
+        return "<script>alert('로그인이 필요합니다.'); location.href='/login';</script>"
+
+    member_id = session['user_id']
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 1. 사용자의 주문 마스터 정보 가져오기 (orders 테이블)
+            sql = """
+                SELECT id, total_price, status, created_at 
+                FROM orders 
+                WHERE member_id = %s 
+                ORDER BY created_at DESC
+            """
+            cursor.execute(sql, (member_id,))
+            orders = cursor.fetchall()
+
+            # 2. 각 주문별 상세 상품 정보 가져오기 (주문이 여러 개일 수 있으므로 반복)
+            for order in orders:
+                # order_items와 items 테이블을 조인하여 상품명을 가져옵니다
+                item_sql = """
+                    SELECT i.name, oi.qty, oi.price 
+                    FROM order_items oi
+                    JOIN items i ON oi.item_id = i.id
+                    WHERE oi.order_id = %s
+                """
+                cursor.execute(item_sql, (order['id'],))
+                order['order_details'] = cursor.fetchall() # order 딕셔너리에 items 리스트 추가
+
+        return render_template('myorder.html', orders=orders)
+    finally:
+        conn.close()
+
+
+# --- [관리자: 상품 등록] ---
+@app.route('/shop/admin/items', methods=['GET', 'POST'])
+def admin_item_add():
+    if session.get('user_role', 0) < 4:
+        return "<script>alert('권한이 없습니다.'); location.href='/';</script>"
+
+    if request.method == 'POST':
+        # items 테이블 컬럼명 그대로 사용
+        code = request.form.get('code')
+        name = request.form.get('name')
+        category = request.form.get('category')
+        price = request.form.get('price')
+        stock = request.form.get('stock')
+
+        conn = Session.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                sql = "INSERT INTO items (code, name, category, price, stock) VALUES (%s, %s, %s, %s, %s)"
+                cursor.execute(sql, (code, name, category, price, stock))
+                conn.commit()
+            return "<script>alert('상품이 등록되었습니다.'); location.href='/shop/items';</script>"
+        except Exception as e:
+            print(f"상품 등록 오류: {e}")
+            return "<script>alert('등록 실패'); history.back();</script>"
+        finally:
+            conn.close()
+
+    return render_template('admin_item_add.html')
+
+
+
+
+# --- [관리자: 주문 판매 현황] ---
+@app.route('/shop/sales')
+def shop_sales():
+    if session.get('user_role', 0) < 3:
+        return "<script>alert('권한이 없습니다.'); location.href='/';</script>"
+
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # orders와 members 테이블을 조인하여 누가 주문했는지 가져옵니다
+            sql = """
+                  SELECT o.id, m.name as member_name, o.total_price, o.status, o.created_at
+                  FROM orders o
+                           JOIN members m ON o.member_id = m.id
+                  ORDER BY o.created_at DESC \
+                  """
+            cursor.execute(sql)
+            sales = cursor.fetchall()
+        return render_template('shop_sales.html', sales=sales)
+    finally:
+        conn.close()
+
+
+@app.route('/shop/admin/items_edit')
+def admin_item_edit_list():
+    if session.get('user_role', 0) < 4:
+        return "<script>alert('권한이 없습니다.'); location.href='/';</script>"
+
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 수정을 위해 모든 상품 목록을 불러옴
+            cursor.execute("SELECT * FROM items ORDER BY id DESC")
+            items = cursor.fetchall()
+        return render_template('admin_item_list.html', items=items)
+    finally:
+        conn.close()
+
+
+# 3. 실제 수정 실행 페이지 (위 리스트에서 '수정' 클릭 시 호출)
+@app.route('/shop/admin/item_modify/<int:item_id>', methods=['GET', 'POST'])
+def admin_item_modify(item_id):
+    conn = Session.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            if request.method == 'POST':
+                # 수정된 값 반영
+                code = request.form.get('code')
+                name = request.form.get('name')
+                category = request.form.get('category')
+                price = request.form.get('price')
+                stock = request.form.get('stock')
+
+                sql = "UPDATE items SET code=%s, name=%s, category=%s, price=%s, stock=%s WHERE id=%s"
+                cursor.execute(sql, (code, name, category, price, stock, item_id))
+                conn.commit()
+                return "<script>alert('수정 완료'); location.href='/shop/admin/items_edit';</script>"
+
+            # 기존 데이터 불러오기
+            cursor.execute("SELECT * FROM items WHERE id = %s", (item_id,))
+            item = cursor.fetchone()
+            return render_template('admin_item_modify.html', item=item)
+    finally:
+        conn.close()
+
 
 
 ################################################################################################

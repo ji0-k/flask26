@@ -1,0 +1,38 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 border-bottom pb-2"><i class="bi bi-cart4"></i> 교구몰 상품 목록</h2>
+    
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for item in items %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <span class="badge bg-info text-dark">{{ item.category }}</span>
+                </div>
+                
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-truncate">{{ item.name }}</h5>
+                    <p class="card-text text-muted mb-1 small text-secondary">상품코드: {{ item.code }}</p>
+                    <h4 class="text-primary fw-bold">{{ "{:,}".format(item.price) }}원</h4>
+                    <p class="text-muted small">재고수량: {{ item.stock }}개</p>
+                </div>
+
+                <div class="card-footer bg-white border-0 pb-3">
+                    <form action="/shop/add_cart" method="POST">
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">수량</span>
+                            <input type="number" name="qty" class="form-control" value="1" min="1" max="{{ item.stock }}">
+                        </div>
+                        <button type="submit" class="btn btn-outline-dark w-100">
+                            <i class="bi bi-cart-plus"></i> 장바구니 담기
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

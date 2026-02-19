@@ -1,0 +1,61 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h4 class="mb-0 fw-bold text-center">주문서 작성</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form action="/shop/checkout" method="POST">
+                        <h5 class="mb-3 border-start border-4 border-primary ps-2">주문자 정보</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">이름</label>
+                            <input type="text" class="form-control" value="{{ user.name }}" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">이메일</label>
+                            <input type="email" name="order_email" class="form-control" value="{{ user.email }}" placeholder="example@domain.com">
+                            <div class="form-text text-primary">
+                                <i class="bi bi-info-circle"></i> * 이메일 입력 시 주문내역이 전송됩니다.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">연락처(핸드폰)</label>
+                            <input type="tel" name="order_phone" class="form-control" placeholder="010-0000-0000" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">배송 주소</label>
+                            <textarea name="order_address" class="form-control" rows="3" required>{{ user.address }}</textarea>
+                            <div class="form-text">기본 주소지가 입력되어 있습니다. 변경이 필요하면 수정해 주세요.</div>
+                        </div>
+
+                        <hr class="my-4">
+                        
+                        <div class="bg-light p-3 rounded mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">최종 결제 금액</span>
+                                <span class="h4 mb-0 text-danger fw-bold">{{ "{:,}".format(total_payment) }}원</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="/shop/cart" class="btn btn-outline-secondary w-100 py-2">장바구니로 돌아가기</a>
+                            </div>
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-success w-100 py-2 fw-bold">최종 주문하기</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

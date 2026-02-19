@@ -1,0 +1,43 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm border-warning">
+        <div class="card-header bg-warning"><b>상품 정보 수정 (ID: {{ item.id }})</b></div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">상품 코드</label>
+                        <input type="text" name="code" class="form-control" value="{{ item.code }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">카테고리</label>
+                        <select name="category" class="form-select">
+                            <option value="교재" {% if item.category == '교재' %}selected{% endif %}>교재</option>
+                            <option value="사무용품" {% if item.category == '사무용품' %}selected{% endif %}>사무용품</option>
+                            <option value="프로그램" {% if item.category == '프로그램' %}selected{% endif %}>프로그램</option>
+                            <option value="기기장치" {% if item.category == '기기장치' %}selected{% endif %}>기기장치</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">상품명</label>
+                        <input type="text" name="name" class="form-control" value="{{ item.name }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">가격</label>
+                        <input type="number" name="price" class="form-control" value="{{ item.price }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">재고</label>
+                        <input type="number" name="stock" class="form-control" value="{{ item.stock }}">
+                    </div>
+                </div>
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-success">저장하기</button>
+                    <a href="/shop/admin/items_edit" class="btn btn-secondary">목록으로</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

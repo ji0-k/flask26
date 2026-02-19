@@ -24,7 +24,9 @@
                     <a href="/filesboard/view/{{ p.id }}" class="text-decoration-none text-dark fw-bold">
                         {{ p.title }}
                         {% if p.file_count > 0 %}
-                            <i class="bi bi-paperclip text-primary ms-1">{{[p.file_count]}}</i>
+                            <i class="bi bi-paperclip text-primary ms-1 small fw-light">
+                                첨부파일[{{ p.file_count }}]
+                            </i>
                         {% endif %}
                     </a>
                 </td>

@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="py-5">
+        <i class="bi bi-check-circle-fill display-1 text-success"></i>
+        <h2 class="mt-4 fw-bold">주문이 정상적으로 완료되었습니다!</h2>
+        <p class="text-muted">주문 번호: <strong>#{{ order_id }}</strong></p>
+        
+        <div class="mt-5">
+            <a href="/shop/items" class="btn btn-primary btn-lg px-4 me-2">계속 쇼핑하기</a>
+            <a href="/myorder" class="btn btn-outline-secondary btn-lg px-4">주문 내역 확인</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

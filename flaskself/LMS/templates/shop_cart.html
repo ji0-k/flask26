@@ -1,0 +1,71 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 fw-bold"><i class="bi bi-cart-check"></i> 장바구니</h2>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if cart %}
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>상품명</th>
+                        <th class="text-center">단가</th>
+                        <th class="text-center" style="width: 150px;">수량</th>
+                        <th class="text-center">소계</th>
+                        <th class="text-center">관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart %}
+                    <tr>
+                        <td>
+                            <strong class="text-dark">{{ item.name }}</strong>
+                        </td>
+                        <td class="text-center">{{ "{:,}".format(item.price) }}원</td>
+                        <td class="text-center">
+                            {{ item.qty }}개
+                        </td>
+                        <td class="text-center fw-bold text-primary">
+                            {{ "{:,}".format(item.subtotal) }}원
+                        </td>
+                        <td class="text-center">
+                            <a href="/shop/cart/delete/{{ item.id }}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('정말 삭제하시겠습니까?');">
+                               삭제
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="row mt-4 pt-3 border-top">
+                <div class="col-md-6">
+                    <a href="/shop/items" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> 쇼핑 계속하기
+                    </a>
+                    <a href="/shop/cart/clear" class="btn btn-outline-secondary" onclick="return confirm('장바구니의 모든 상품을 삭제하시겠습니까?');">
+                        <i class="bi bi-trash"></i> 장바구니 비우기
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <h4 class="mb-3">총 결제 금액: <span class="text-danger fw-bold">{{ "{:,}".format(total_payment) }}원</span></h4>
+                    <form action="/shop/checkout" method="POST">
+                        <a href="/shop/order_form" class="btn btn-success btn-lg px-5">주문하기</a>
+                    </form>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-cart-x display-1 text-muted"></i>
+                <p class="mt-3 text-muted">장바구니가 비어 있습니다.</p>
+                <a href="/shop/items" class="btn btn-primary mt-2">상품 보러가기</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -26,12 +26,20 @@
                             {% endif %}
                         </span>
                             <div class="card bg-light border-0 mt-3">
-                            <div class="card-body">
-                                <small class="text-muted d-block mb-1">현재 평균 점수</small>
-                                <h4 class="fw-bold text-primary">{{ "%.1f"|format(user.average) if user.average else '0.0' }}점</h4>
-                                <span class="badge bg-success">학점: {{ user.grade if user.grade else '-' }}</span>
+                                <div class="card-body">
+                                    <small class="text-muted d-block mb-1">현재 평균 점수</small>
+                                    <h4 class="fw-bold text-primary">
+                                        {% if user.average %}
+                                            {{ "%.1f"|format(user.average) }}점
+                                        {% else %}
+                                            성적 미확정
+                                        {% endif %}
+                                    </h4>
+                                    {% if user.average %}
+                                        <span class="badge bg-success">학점: {{ user.grade if user.grade else '-' }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
                     </div>
 
                     <div class="col-md-8 ps-md-5">
@@ -58,7 +66,22 @@
                             <p><strong>주소:</strong> {{ user.address if user.address else '등록된 주소 없음' }}</p>
                             <p><strong>가입일:</strong> {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else "날짜없음" }}</p>
                         </div>
-
+                        <h5 class="text-muted border-bottom pb-2 mt-4">쇼핑 이용 현황</h5>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card bg-light border-0 shadow-sm p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-bag-check-fill text-primary fs-4 me-2"></i>
+                                            <span class="fw-bold">최근 교구 구매 내역을 확인해 보세요.</span>
+                                        </div>
+                                        <a href="/myorder" class="btn btn-sm btn-primary px-3">
+                                            나의 주문 내역 조회 <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <h5 class="text-muted border-bottom pb-2 mt-4">활동 현황</h5>
                         <div class="row mt-3 g-2"> <div class="col-3">
                                 <div class="card bg-light border-0 shadow-sm text-center p-2">
